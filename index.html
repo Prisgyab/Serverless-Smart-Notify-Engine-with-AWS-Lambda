@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notification Console</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #ffffff;
+  color: #1e293b;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+/* NAV */
+nav {
+  background: #0f172a;
+  padding: 0 36px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nav-logo {
+  width: 30px;
+  height: 30px;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  border-radius: 7px;
+}
+.nav-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  letter-spacing: 0.01em;
+}
+.nav-badge {
+  font-size: 0.6rem;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  color: #475569;
+}
+.online-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+  animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* PAGE */
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 36px 24px 0;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 820px) {
+  .page { grid-template-columns: 1fr; }
+  nav { padding: 0 20px; }
+}
+
+/* CARD */
+.card {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.card-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #475569;
+}
+.card-body { padding: 20px; }
+
+/* FORM */
+.field { margin-bottom: 16px; }
+.field label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+  margin-bottom: 6px;
+}
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 7px;
+  color: #e2e8f0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.87rem;
+  padding: 10px 13px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.field input::placeholder,
+.field textarea::placeholder { color: #334155; }
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+}
+.field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%2364748b' d='M5 7L0 2h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  cursor: pointer;
+}
+.field textarea { resize: vertical; min-height: 90px; line-height: 1.55; }
+
+/* BUTTON */
+.btn-send {
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  letter-spacing: 0.02em;
+}
+.btn-send:hover:not(:disabled) { opacity: 0.88; }
+.btn-send:active { transform: scale(0.98); }
+.btn-send:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-refresh {
+  padding: 6px 13px;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #1e293b;
+  color: #64748b;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.74rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.btn-refresh:hover { color: #e2e8f0; border-color: #3b82f6; }
+.btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* STATS */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid #1e293b;
+}
+.stat {
+  padding: 14px 10px;
+  text-align: center;
+  border-right: 1px solid #1e293b;
+}
+.stat:last-child { border-right: none; }
+.stat-num { font-size: 1.4rem; font-weight: 700; color: #e2e8f0; }
+.stat-lbl { font-size: 0.62rem; color: #475569; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 2px; }
+
+/* SEARCH */
+#search {
+  width: 180px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 7px;
+  color: #e2e8f0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.8rem;
+  padding: 7px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+#search::placeholder { color: #334155; }
+#search:focus { border-color: #3b82f6; }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+thead tr { border-bottom: 1px solid #1e293b; }
+th {
+  padding: 11px 14px;
+  text-align: left;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #475569;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+th:hover { color: #94a3b8; }
+th.active { color: #3b82f6; }
+th .si { margin-left: 3px; opacity: 0.5; }
+th.active .si { opacity: 1; }
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #1e293b;
+  color: #cbd5e1;
+  vertical-align: middle;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: #1e293b; }
+
+/* PILLS */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.pill-dot { width: 5px; height: 5px; border-radius: 50%; }
+.pill-sent    { background: rgba(34,197,94,0.12);  color: #22c55e; }
+.pill-sent    .pill-dot { background: #22c55e; }
+.pill-pending { background: rgba(234,179,8,0.12);  color: #eab308; }
+.pill-pending .pill-dot { background: #eab308; }
+.pill-failed  { background: rgba(239,68,68,0.12);  color: #ef4444; }
+.pill-failed  .pill-dot { background: #ef4444; }
+.pill-unknown { background: rgba(100,116,139,0.15); color: #64748b; }
+.pill-unknown .pill-dot { background: #64748b; }
+
+/* TAG */
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 0.68rem;
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  font-family: 'Courier New', monospace;
+}
+
+/* EMPTY */
+.empty-row td {
+  text-align: center;
+  padding: 52px 20px;
+  color: #334155;
+  font-size: 0.83rem;
+}
+
+/* TOAST */
+#toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  pointer-events: none;
+}
+.toast-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 16px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  color: #e2e8f0;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  pointer-events: all;
+  max-width: 320px;
+  animation: tin 0.3s ease;
+}
+.toast-item.success { border-left: 3px solid #22c55e; }
+.toast-item.error   { border-left: 3px solid #ef4444; }
+@keyframes tin { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* SPINNER */
+.spinner {
+  width: 13px; height: 13px;
+  border: 2px solid rgba(255,255,255,0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.ts { color: #475569; font-size: 0.74rem; font-family: 'Courier New', monospace; white-space: nowrap; }
+.trunc { max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* NAV accent line */
+nav::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #3b82f6 40%, #6366f1 60%, transparent);
+  opacity: 0.5;
+}
+nav { position: relative; }
+
+/* Card entrance animation */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card { animation: fadeUp 0.35s ease both; }
+.page > div:nth-child(2) .card { animation-delay: 0.08s; }
+
+/* Table row fade-in */
+@keyframes rowIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+tbody tr { animation: rowIn 0.2s ease both; }
+
+/* Last refreshed label */
+#last-refresh {
+  font-size: 0.68rem;
+  color: #334155;
+  font-family: 'Courier New', monospace;
+}
+
+/* Nav subtitle */
+.nav-sub {
+  font-size: 0.68rem;
+  color: #334155;
+  font-family: 'Courier New', monospace;
+  margin-left: 4px;
+}
+
+/* Subtle card header top accent */
+.card-header {
+  border-top: 2px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+.card-header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #3b82f6, #6366f1);
+  opacity: 0.6;
+  border-radius: 12px 12px 0 0;
+}
+
+/* Input character count hint */
+.field-hint {
+  font-size: 0.65rem;
+  color: #334155;
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: #1e293b;
+  margin: 4px 0 16px;
+}
+
+/* Stat hover */
+.stat { transition: background 0.15s; cursor: default; }
+.stat:hover { background: #1e293b; }
+
+/* Send button glow on hover */
+.btn-send:hover:not(:disabled) {
+  opacity: 1;
+  box-shadow: 0 0 18px rgba(99,102,241,0.35);
+}
+
+/* FOOTER */
+footer {
+  max-width: 1120px;
+  margin: 40px auto 0;
+  padding: 0 24px 32px;
+  font-size: 0.72rem;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+footer strong { color: #475569; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo"></div>
+    <span class="nav-title">Notification Console</span>
+    <span class="nav-badge">Dev</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-sub" id="last-refresh"></span>
+    <div class="online-dot"></div>
+    System Online
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- LEFT: Send Form -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Send Notification</span>
+      </div>
+      <div class="card-body">
+        <form id="notify-form" novalidate>
+
+          <div class="field">
+            <label for="event-type">Event Type</label>
+            <select id="event-type" required>
+              <option value="">Select event type</option>
+              <option value="user.signup">user.signup</option>
+              <option value="user.password_reset">user.password_reset</option>
+              <option value="order.placed">order.placed</option>
+              <option value="order.shipped">order.shipped</option>
+              <option value="order.cancelled">order.cancelled</option>
+              <option value="payment.success">payment.success</option>
+              <option value="payment.failed">payment.failed</option>
+              <option value="alert.system">alert.system</option>
+              <option value="custom">custom...</option>
+            </select>
+          </div>
+
+          <div class="field" id="custom-field" style="display:none">
+            <label for="custom-event">Custom Event Name</label>
+            <input type="text" id="custom-event" placeholder="e.g. invoice.generated">
+          </div>
+
+          <div class="field">
+            <label for="recipient">Recipient Email</label>
+            <input type="email" id="recipient" placeholder="dev@example.com" required>
+          </div>
+
+          <div class="field">
+            <label for="message">Message</label>
+            <textarea id="message" placeholder="Notification message body..." required></textarea>
+          </div>
+
+          <button type="submit" class="btn-send" id="submit-btn">Trigger Notification</button>
+
+        </form>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-num" id="s-total">--</div>
+          <div class="stat-lbl">Total</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" id="s-sent" style="color:#22c55e">--</div>
+          <div class="stat-lbl">Sent</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" id="s-failed" style="color:#ef4444">--</div>
+          <div class="stat-lbl">Failed</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: History Table -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-label">Notification History</span>
+        <div style="display:flex;align-items:center;gap:9px">
+          <input type="text" id="search" placeholder="Filter...">
+          <button class="btn-refresh" id="refresh-btn" onclick="loadNotifications()">Refresh</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th data-col="timestamp" class="active">Time <span class="si">&#8595;</span></th>
+              <th data-col="event_type">Event <span class="si">&#8597;</span></th>
+              <th data-col="recipient_email">Recipient <span class="si">&#8597;</span></th>
+              <th data-col="message">Message <span class="si">&#8597;</span></th>
+              <th data-col="status">Status <span class="si">&#8597;</span></th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr class="empty-row"><td colspan="5">Loading notifications...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<footer>
+  <span>Built by <strong>TechbyEdwina</strong> &nbsp;&mdash;&nbsp; AWS Notification System &nbsp;&copy; 2026</span>
+</footer>
+
+<script>
+// CONFIG: Replace with your API Gateway base URL
+// e.g. "https://abc123.execute-api.us-east-1.amazonaws.com/prod"
+var API_BASE = "https://xica6vqucg.execute-api.us-east-2.amazonaws.com/prod";
+
+var NOTIFY_URL = API_BASE + "/notify";
+var QUERY_URL  = API_BASE + "/notifications";
+
+var allData = [];
+var sortCol = "timestamp";
+var sortDir = "desc";
+
+document.addEventListener("DOMContentLoaded", function () {
+  loadNotifications();
+  setupForm();
+  document.getElementById("search").addEventListener("input", renderTable);
+  document.getElementById("event-type").addEventListener("change", function () {
+    document.getElementById("custom-field").style.display = this.value === "custom" ? "block" : "none";
+  });
+  document.querySelectorAll("th[data-col]").forEach(function (th) {
+    th.addEventListener("click", function () {
+      var col = th.getAttribute("data-col");
+      sortDir = (sortCol === col && sortDir === "desc") ? "asc" : "desc";
+      sortCol = col;
+      document.querySelectorAll("th[data-col]").forEach(function (t) {
+        t.classList.remove("active");
+        t.querySelector(".si").innerHTML = "&#8597;";
+      });
+      th.classList.add("active");
+      th.querySelector(".si").innerHTML = sortDir === "asc" ? "&#8593;" : "&#8595;";
+      renderTable();
+    });
+  });
+});
+
+function setupForm() {
+  document.getElementById("notify-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var evtEl = document.getElementById("event-type");
+    var evt = evtEl.value === "custom"
+      ? document.getElementById("custom-event").value.trim()
+      : evtEl.value;
+    var recipient = document.getElementById("recipient").value.trim();
+    var message = document.getElementById("message").value.trim();
+
+    if (!evt)                                  { showToast("Select or enter an event type.", "error"); return; }
+    if (!recipient || !isEmail(recipient))     { showToast("Enter a valid recipient email.", "error"); return; }
+    if (!message)                              { showToast("Message cannot be empty.", "error"); return; }
+
+    var btn = document.getElementById("submit-btn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Sending...';
+
+    fetch(NOTIFY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event_type: evt, recipient_email: recipient, message: message })
+    })
+    .then(function (res) {
+      if (!res.ok) return res.text().then(function (t) { throw new Error(t || "HTTP " + res.status); });
+      return res.json();
+    })
+    .then(function () {
+      showToast("Notification sent successfully.", "success");
+      document.getElementById("notify-form").reset();
+      document.getElementById("custom-field").style.display = "none";
+      setTimeout(loadNotifications, 900);
+    })
+    .catch(function (err) {
+      showToast("Failed: " + err.message, "error");
+    })
+    .finally(function () {
+      btn.disabled = false;
+      btn.innerHTML = "Trigger Notification";
+    });
+  });
+}
+
+function loadNotifications() {
+  var btn = document.getElementById("refresh-btn");
+  btn.textContent = "Loading...";
+  btn.disabled = true;
+
+  fetch(QUERY_URL)
+    .then(function (res) {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then(function (data) {
+      allData = Array.isArray(data) ? data : (data.notifications || data.items || []);
+      renderTable();
+      updateStats();
+      var now = new Date();
+      document.getElementById("last-refresh").textContent =
+        "Last sync " + String(now.getHours()).padStart(2,"0") + ":"
+        + String(now.getMinutes()).padStart(2,"0") + ":"
+        + String(now.getSeconds()).padStart(2,"0");
+    })
+    .catch(function (err) {
+      setEmpty("Could not load notifications: " + err.message);
+    })
+    .finally(function () {
+      btn.textContent = "Refresh";
+      btn.disabled = false;
+    });
+}
+
+function renderTable() {
+  var q = document.getElementById("search").value.toLowerCase();
+  var rows = allData.slice();
+
+  if (q) {
+    rows = rows.filter(function (n) {
+      return Object.values(n).some(function (v) {
+        return String(v).toLowerCase().indexOf(q) !== -1;
+      });
+    });
+  }
+
+  rows.sort(function (a, b) {
+    var va = a[sortCol] != null ? a[sortCol] : "";
+    var vb = b[sortCol] != null ? b[sortCol] : "";
+    if (sortCol === "timestamp") {
+      va = new Date(va).getTime() || 0;
+      vb = new Date(vb).getTime() || 0;
+    } else {
+      va = String(va).toLowerCase();
+      vb = String(vb).toLowerCase();
+    }
+    if (va < vb) return sortDir === "asc" ? -1 : 1;
+    if (va > vb) return sortDir === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  if (rows.length === 0) {
+    setEmpty(q ? "No results match your filter." : "No notifications yet.");
+    return;
+  }
+
+  document.getElementById("tbody").innerHTML = rows.map(function (n) {
+    return "<tr>"
+      + "<td class='ts'>" + fmtTime(n.timestamp) + "</td>"
+      + "<td><span class='tag'>" + esc(n.event_type || "--") + "</span></td>"
+      + "<td class='trunc' title='" + esc(n.recipient_email || "") + "'>" + esc(n.recipient_email || "--") + "</td>"
+      + "<td class='trunc' title='" + esc(n.message || "") + "'>" + esc(n.message || "--") + "</td>"
+      + "<td>" + makePill(n.status) + "</td>"
+      + "</tr>";
+  }).join("");
+
+  // stagger row animations
+  document.querySelectorAll("#tbody tr").forEach(function(tr, i) {
+    tr.style.animationDelay = (i * 0.03) + "s";
+  });
+}
+
+function updateStats() {
+  document.getElementById("s-total").textContent  = allData.length;
+  document.getElementById("s-sent").textContent   = allData.filter(function (n) { return (n.status || "").toLowerCase() === "sent"; }).length;
+  document.getElementById("s-failed").textContent = allData.filter(function (n) { return (n.status || "").toLowerCase() === "failed"; }).length;
+}
+
+function setEmpty(msg) {
+  document.getElementById("tbody").innerHTML = "<tr class='empty-row'><td colspan='5'>" + esc(msg) + "</td></tr>";
+}
+
+function makePill(status) {
+  var s = (status || "unknown").toLowerCase();
+  var cls = { sent: "pill-sent", pending: "pill-pending", failed: "pill-failed" }[s] || "pill-unknown";
+  return "<span class='pill " + cls + "'><span class='pill-dot'></span>" + esc(status || "unknown") + "</span>";
+}
+
+function fmtTime(ts) {
+  if (!ts) return "--";
+  var d = new Date(ts);
+  if (isNaN(d.getTime())) return String(ts);
+  var mo = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()];
+  return mo + " " + d.getDate() + ", "
+    + String(d.getHours()).padStart(2,"0") + ":"
+    + String(d.getMinutes()).padStart(2,"0") + ":"
+    + String(d.getSeconds()).padStart(2,"0");
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function isEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+
+function showToast(msg, type) {
+  var c = document.getElementById("toast");
+  var el = document.createElement("div");
+  el.className = "toast-item " + (type || "success");
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 4000);
+}
+</script>
+</body>
+</html>
