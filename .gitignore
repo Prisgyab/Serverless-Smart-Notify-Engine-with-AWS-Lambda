@@ -1,0 +1,12 @@
+# Terraform
+infra/.terraform/
+infra/.terraform.lock.hcl
+infra/build/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Python
+__pycache__/
+*.pyc

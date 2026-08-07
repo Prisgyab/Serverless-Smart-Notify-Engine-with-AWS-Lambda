@@ -158,6 +158,14 @@ Full audit trail. Powers the history view on the frontend.
 ├── lambda/
 │   ├── notify_processor.py     # Handles POST /notify
 │   └── notify_query.py         # Handles GET /notifications
+├── infra/                      # Terraform — the entire stack below
+│   ├── provider.tf / variables.tf / outputs.tf
+│   ├── dynamodb.tf             # NotificationLog table
+│   ├── sns_sqs.tf              # SNS topic + email subscription, SQS retry buffer
+│   ├── lambda.tf               # Both Lambda functions + IAM roles
+│   ├── api_gateway.tf          # REST API, /notify + /notifications, CORS
+│   ├── s3.tf                   # Static website hosting for index.html
+│   └── modules/cors/           # Reusable OPTIONS/CORS module
 └── README.md
 ```
 
@@ -173,6 +181,30 @@ It's serverless, scales automatically, and has single-digit millisecond read lat
 
 **Why a simulator dashboard?**
 In a real system, the notification engine would be called by upstream services (an order service, an auth service, etc.). The simulator represents the tool an engineer uses to test and validate the pipeline before those upstream services are connected — which is exactly how it works in practice.
+
+**Known limitation — SNS email delivery is fixed, not per-recipient**
+SNS topic subscriptions are static: the email address that receives real messages is the one subscribed at deploy time (`notification_email` in Terraform), not the `recipient_email` typed into the form. Every submission is logged in DynamoDB with the intended recipient, and that address is included in the email body for demo purposes, but SNS itself can't dynamically address a different inbox per API call. A production version would swap SNS for **Amazon SES** (`send_email`/`send_raw_email` with a verified sending identity) inside `notify_processor.py` to deliver to an arbitrary address per request. Kept as SNS here to match the documented architecture and stay in the AWS free tier without SES production-access approval.
+
+---
+
+## Deploying
+
+```bash
+cd infra
+terraform init
+terraform apply -var="notification_email=you@example.com"
+```
+
+Confirm the SNS subscription email AWS sends you, then:
+
+1. Copy the `api_base_url` output value.
+2. Paste it into `API_BASE` in `index.html` (root of the repo).
+3. Re-run `terraform apply` — it re-uploads the updated `index.html` to S3.
+4. Open the `frontend_website_url` output in a browser and send a test notification.
+
+```bash
+terraform destroy   # tear everything down when done
+```
 
 ---
 
@@ -192,19 +224,17 @@ Total estimated cost: **$0.00** — every service used falls within AWS Free Tie
 
 ---
 
-## Student Checklist
+## Deployment Checklist
 
-- [x] DynamoDB `NotificationLog` table created
-- [x] Lambda `NotifyProcessor` deployed and tested
-- [x] Lambda `NotifyQuery` deployed and tested
-- [x] SNS topic created and email subscription confirmed
-- [x] SQS queue created and subscribed to SNS
-- [x] API Gateway configured with CORS (POST + GET)
-- [x] Frontend (`index.html`) deployed to S3 static website
-- [x] Full end-to-end test completed (form → email received)
-- [x] CloudWatch logs reviewed
-- [x] Resources cleaned up
-- [x] Project documented on GitHub
+All infrastructure and application code below is written and in this repo. Check these off as you deploy and verify against your own AWS account:
+
+- [ ] `terraform apply` completed — DynamoDB, SNS, SQS, Lambda, API Gateway, S3 all created
+- [ ] SNS email subscription confirmed (check your inbox after `apply`)
+- [ ] `index.html` updated with the real `api_base_url` output and re-uploaded
+- [ ] Full end-to-end test completed (form → notification appears in history table → email received)
+- [ ] CloudWatch logs reviewed for both Lambda functions
+- [ ] `terraform destroy` run when done, to avoid ongoing charges
+- [ ] Screenshot/GIF of the working dashboard added to this README for portfolio purposes
 
 ---
 

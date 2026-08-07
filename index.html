@@ -549,9 +549,10 @@ footer strong { color: #475569; font-weight: 600; }
 </footer>
 
 <script>
-// CONFIG: Replace with your API Gateway base URL
-// e.g. "https://abc123.execute-api.us-east-1.amazonaws.com/prod"
-var API_BASE = "https://xica6vqucg.execute-api.us-east-2.amazonaws.com/prod";
+// CONFIG: Replace with your deployed API Gateway base URL.
+// After `terraform apply` in infra/, copy the `api_base_url` output here,
+// then re-upload this file (a second `terraform apply` will do it).
+var API_BASE = "https://REPLACE-WITH-YOUR-API-ID.execute-api.REPLACE-REGION.amazonaws.com/prod";
 
 var NOTIFY_URL = API_BASE + "/notify";
 var QUERY_URL  = API_BASE + "/notifications";
